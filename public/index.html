@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>학교 말 탐험대</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans KR",sans-serif;background:#f5f3ff;color:#29263d}
+header{background:linear-gradient(135deg,#7567e8,#54c8b2);color:#fff;padding:16px 22px;position:sticky;top:0;z-index:5}
+.head{max-width:1100px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:10px}.logo{font-size:23px;font-weight:900}
+nav button{background:#ffffff22;color:#fff;border:1px solid #ffffff55;border-radius:10px;padding:9px 12px;margin-left:5px}
+main{max-width:1100px;margin:22px auto;padding:0 16px}.hero,.card{background:#fff;border-radius:20px;padding:20px;box-shadow:0 6px 22px #4b3d8b14;margin-bottom:16px}
+h1,h2{margin-top:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.place{background:#fff;border:2px solid #eee7ff;border-radius:18px;padding:18px;text-align:left}.place:hover{border-color:#7567e8}
+.emoji{font-size:36px}.muted{color:#77738a;font-size:13px}.chips{display:flex;flex-wrap:wrap;gap:8px}.chip,.lang{border:0;border-radius:999px;padding:9px 12px;background:#f0eef8}.chip.on,.lang.on{background:#7567e8;color:white}
+input,textarea,select{width:100%;padding:11px;border:2px solid #e5e1ef;border-radius:11px;margin:5px 0;font:inherit}
+button.primary{background:#7567e8;color:#fff;border:0;border-radius:11px;padding:11px 15px;font-weight:700}button.secondary{background:#e7f8f4;color:#24776b;border:0;border-radius:11px;padding:11px 15px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.hidden{display:none}
+.translate{padding:13px;background:#f7fffd;border-left:5px solid #54c8b2;border-radius:12px;margin:8px 0}.tr{font-size:18px;margin-top:4px}
+.poster{width:min(760px,100%);aspect-ratio:4/3;margin:auto;padding:34px;border-radius:18px;background:linear-gradient(135deg,#fff9e7,#eefcff);border:8px solid #7567e8;text-align:center}
+.poster h1{font-size:34px}.poster .big{font-size:23px;font-weight:800}.poster .small{margin-top:12px;color:#555}
+.posterWords{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}.posterBox{background:#ffffffcc;border-radius:12px;padding:12px;text-align:left}
+.note{background:#fff8df;padding:12px;border-radius:12px;margin-top:10px}
+@media(max-width:650px){.poster h1{font-size:25px}.poster{padding:20px}}
+</style>
+</head>
+<body>
+<header><div class="head"><div class="logo">🧭 학교 말 탐험대</div><nav><button onclick="home()">🏫 장소</button><button onclick="showPoster()">🎨 포스터</button></nav></div></header>
+<main>
+<section id="home">
+<div class="hero"><h1>🌏 우리 조의 학교 말 탐험</h1><p>조별로 어휘·표현을 조사하고, 언어 탐험가가 다른 언어로 번역해 봅니다.</p>
+<div class="grid" style="margin-top:14px"><div><b>🔎 어휘 탐험가</b><br><span class="muted">학교 단어 찾기</span></div><div><b>🗣️ 표현 탐험가</b><br><span class="muted">실제 표현 찾기</span></div><div><b>🌏 언어 탐험가</b><br><span class="muted">번역·자연스러움 확인</span></div><div><b>🎤 발표자</b><br><span class="muted">대표 표현 발표</span></div></div></div>
+<div class="card"><label>우리 조 이름</label><input id="team" placeholder="예: 무지개 3조"><div class="actions"><button class="primary" onclick="saveTeam()">조 이름 저장</button></div></div>
+<div id="places" class="grid"></div>
+</section>
+
+<section id="work" class="hidden"><button class="secondary" onclick="home()">← 장소로</button>
+<div class="hero"><h1 id="title"></h1><p id="teamLine"></p></div>
+<div class="card"><h2>🔎 어휘 탐험가</h2><div id="words" class="chips"></div><input id="newWord" placeholder="직접 찾은 어휘"><button class="secondary" onclick="addWord()">+ 추가</button></div>
+<div class="card"><h2>🗣️ 표현 탐험가</h2><div id="phrases" class="chips"></div><input id="newPhrase" placeholder="직접 찾은 표현"><button class="secondary" onclick="addPhrase()">+ 추가</button></div>
+<div class="card"><h2>🌏 언어 탐험가</h2><p class="muted">우리 조가 조사한 어휘와 표현을 선택한 언어로 실제 번역합니다.</p>
+<div id="langs" class="chips"></div><div id="results"></div><div class="note">💡 자동 번역은 참고용입니다. 실제 화자나 가족 친구에게 자연스러운 표현인지 확인해 보세요.</div></div>
+<div class="card"><h2>🎤 발표자</h2><select id="rep"></select><button class="primary" onclick="saveRep()">대표 표현 저장</button></div>
+</section>
+
+<section id="posterSection" class="hidden"><button class="secondary" onclick="home()">← 장소로</button>
+<div class="hero"><h1>🎨 우리 조 다국어 학교생활 포스터</h1><p>조사한 내용을 포스터로 정리해 발표할 수 있습니다.</p></div>
+<div class="card"><label>포스터 제목</label><input id="ptitle" value="우리 학교 생활 한국어"><label>한 줄 소개</label><input id="pintro" value="우리 조가 찾은 학교생활 표현을 다른 언어로 알아보았어요!">
+<div class="actions"><button class="primary" onclick="renderPoster()">포스터 미리보기</button><button class="secondary" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button></div></div>
+<div id="poster"></div></section>
+</main>
+<script>
+const places=[
+["교실","📚",["교실","칠판","교탁","책상","의자","사물함","교과서","공책","필통","연필","지우개","준비물","숙제","수업","발표","모둠"],["책을 펴세요.","책을 덮으세요.","몇 쪽이에요?","공책에 써 보세요.","잘 모르겠어요.","다시 설명해 주세요.","천천히 말해 주세요.","도와주세요.","같이 해도 돼요?","제 차례예요."]],
+["보건실","🩹",["보건실","보건 선생님","침대","체온계","밴드","붕대","약","열","감기","기침","두통","복통","상처","코피","통증"],["어디가 아파요?","머리가 아파요.","배가 아파요.","어지러워요.","다쳤어요.","여기가 아파요.","약을 먹어도 돼요?","쉬어도 돼요?"]],
+["과학실","🔬",["과학실","실험","실험대","현미경","비커","시험관","스포이트","자석","온도계","저울","돋보기","관찰","측정","비교","결과","변화","안전"],["실험을 시작하겠습니다.","준비물을 확인하세요.","관찰해 보세요.","무엇이 달라졌나요?","어떤 결과가 나왔나요?","왜 이렇게 되었을까요?","조심하세요.","결과를 기록하세요."]],
+["체육관","🏀",["체육관","운동장","체육복","운동화","공","농구공","축구공","배구공","줄넘기","매트","농구대","골대","네트","달리기","뛰기","던지기","받기","경기","팀","점수","규칙"],["준비운동을 하세요.","줄을 서세요.","조심하세요.","공을 던져 주세요.","공을 받아 주세요.","같이 하자.","내 차례예요.","잘했어!","괜찮아?","몇 점이에요?"]],
+["급식실","🍚",["급식실","급식","식판","숟가락","젓가락","포크","밥","국","반찬","김치","음식","메뉴","배식","줄","자리","물","우유","잔반","알레르기","맛"],["줄을 서세요.","식판을 받아 가세요.","오늘 메뉴가 뭐예요?","이 음식이 뭐예요?","이게 매워요?","조금만 주세요.","더 주세요.","못 먹어요.","알레르기가 있어요.","맛있어요.","잘 먹겠습니다.","잘 먹었습니다.","잔반은 어디에 버려요?"]],
+["영어실","🔤",["영어실","영어","알파벳","단어","문장","문법","발음","뜻","표현","영어책","듣기","말하기","읽기","쓰기","노래","게임","대화","질문","대답"],["영어로 뭐라고 해요?","무슨 뜻이에요?","어떻게 읽어요?","어떻게 발음해요?","다시 말해 주세요.","천천히 말해 주세요.","한 번 더 해 주세요.","잘 모르겠어요.","알겠어요.","질문 있어요.","짝과 연습해 보세요."]],
+["음악실","🎵",["음악실","노래","악기","피아노","리코더","장구","북","꽹과리","기타","멜로디","리듬","박자","음표","가락","소리","목소리","합창","연주","악보","공연"],["악보를 보세요.","몇 박자예요?","같이 연주해요.","따라 해 보세요.","노래를 불러 봅시다.","크게 불러 주세요.","작게 불러 주세요.","다시 해 볼게요.","무슨 악기예요?","박자를 맞춰요."]],
+["컴퓨터실","💻",["컴퓨터실","컴퓨터","모니터","화면","키보드","마우스","프린터","스피커","이어폰","인터넷","검색","사이트","파일","폴더","문서","사진","동영상","프로그램","로그인","저장","삭제","복사","붙여넣기","클릭"],["컴퓨터를 켜세요.","컴퓨터를 꺼 주세요.","어디를 눌러요?","이것을 클릭하세요.","글자를 입력하세요.","검색해 보세요.","파일을 열어 주세요.","파일을 저장하세요.","화면이 안 보여요.","컴퓨터가 안 돼요.","도와주세요.","프린트해도 돼요?"]]
+];
+const languages={en:"English",zh:"中文",ja:"日本語",vi:"Tiếng Việt",ru:"Русский",mn:"Монгол хэл",th:"ภาษาไทย",tl:"Filipino",es:"Español",it:"Italiano",sw:"Kiswahili (탄자니아)"};
+let state=JSON.parse(localStorage.getItem("schoolExplorer6")||'{"team":"","place":0,"words":{},"phrases":{},"lang":"en","rep":""}');
+function save(){localStorage.setItem("schoolExplorer6",JSON.stringify(state))}
+function init(){document.getElementById("team").value=state.team;renderPlaces()}
+function renderPlaces(){document.getElementById("places").innerHTML=places.map((p,i)=>`<button class="place" onclick="openPlace(${i})"><div class="emoji">${p[1]}</div><h2>${p[0]}</h2><span class="muted">어휘 ${(state.words[i]||[]).length}개 · 표현 ${(state.phrases[i]||[]).length}개</span></button>`).join("")}
+function saveTeam(){state.team=document.getElementById("team").value.trim()||"우리 조";save();alert("조 이름을 저장했어요!")}
+function home(){document.querySelectorAll("section").forEach(x=>x.classList.add("hidden"));document.getElementById("home").classList.remove("hidden");renderPlaces()}
+function openPlace(i){state.place=i;save();document.querySelectorAll("section").forEach(x=>x.classList.add("hidden"));document.getElementById("work").classList.remove("hidden");renderWork()}
+function toggle(type,v){let a=state[type][state.place]||[];a=a.includes(v)?a.filter(x=>x!==v):[...a,v];state[type][state.place]=a;save();renderWork()}
+function addWord(){let v=document.getElementById("newWord").value.trim();if(!v)return;let a=state.words[state.place]||[];if(!a.includes(v))a.push(v);state.words[state.place]=a;document.getElementById("newWord").value="";save();renderWork()}
+function addPhrase(){let v=document.getElementById("newPhrase").value.trim();if(!v)return;let a=state.phrases[state.place]||[];if(!a.includes(v))a.push(v);state.phrases[state.place]=a;document.getElementById("newPhrase").value="";save();renderWork()}
+function renderWork(){let p=places[state.place];document.getElementById("title").textContent=p[1]+" "+p[0]+" 탐험";document.getElementById("teamLine").textContent="👥 "+(state.team||"우리 조")+" · 조별 탐구";
+document.getElementById("words").innerHTML=p[2].map(x=>`<button class="chip ${(state.words[state.place]||[]).includes(x)?"on":""}" onclick='toggle("words",${JSON.stringify(x)})'>${x}</button>`).join("");
+document.getElementById("phrases").innerHTML=p[3].map(x=>`<button class="chip ${(state.phrases[state.place]||[]).includes(x)?"on":""}" onclick='toggle("phrases",${JSON.stringify(x)})'>${x}</button>`).join("");
+document.getElementById("langs").innerHTML=Object.entries(languages).map(([k,v])=>`<button class="lang ${state.lang===k?"on":""}" onclick="translateAll('${k}')">${v}</button>`).join("");
+let ph=state.phrases[state.place]||[];document.getElementById("rep").innerHTML=ph.length?ph.map(x=>`<option>${x}</option>`).join(""):"<option>표현을 먼저 선택하세요</option>";
+if(state.rep)document.getElementById("rep").value=state.rep;
+renderResults();renderPoster();
+}
+async function translateAll(lang){state.lang=lang;save();document.querySelectorAll(".lang").forEach(b=>b.classList.remove("on"));event.target.classList.add("on");let all=[...(state.words[state.place]||[]),...(state.phrases[state.place]||[])];if(!all.length){document.getElementById("results").innerHTML="<div class='note'>먼저 조사할 어휘·표현을 선택하세요.</div>";return}document.getElementById("results").innerHTML="<div class='note'>⏳ 번역 중...</div>";try{let r=await fetch("/api/translate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({texts:all,target:lang})});let d=await r.json();if(!r.ok)throw new Error(d.error||"번역 오류");document.getElementById("results").innerHTML=d.translations.map((t,i)=>`<div class="translate"><b>한국어 · ${all[i]}</b><div class="tr">→ ${languages[lang]} · ${t}</div></div>`).join("")}catch(e){document.getElementById("results").innerHTML=`<div class="note">⚠️ ${e.message}<br>서버가 실행 중인지 확인해 주세요.</div>`}}
+function renderResults(){document.getElementById("results").innerHTML="<div class='note'>언어를 선택하면 실제 번역 결과가 여기에 표시됩니다.</div>"}
+function saveRep(){state.rep=document.getElementById("rep").value;save();alert("대표 표현을 저장했어요!")}
+function showPoster(){document.querySelectorAll("section").forEach(x=>x.classList.add("hidden"));document.getElementById("posterSection").classList.remove("hidden");renderPoster()}
+function renderPoster(){let allW=Object.values(state.words).flat();let allP=Object.values(state.phrases).flat();let lang=languages[state.lang]||"English";let chosen=[...allW,...allP].slice(0,10);document.getElementById("poster").innerHTML=`<div class="poster"><h1>${esc(document.getElementById("ptitle")?.value||"우리 학교 생활 한국어")}</h1><div class="big">${esc(state.team||"우리 조")}</div><div class="small">${esc(document.getElementById("pintro")?.value||"우리 조가 찾은 학교생활 표현을 다른 언어로 알아보았어요!")}</div><div class="posterWords"><div class="posterBox"><b>🔎 우리 조가 찾은 어휘</b><p>${allW.slice(0,5).map(esc).join(" · ")||"조사한 어휘를 추가해 주세요."}</p></div><div class="posterBox"><b>🗣️ 우리 조가 찾은 표현</b><p>${allP.slice(0,5).map(esc).join("<br>")||"조사한 표현을 추가해 주세요."}</p></div></div><div class="small">🌏 언어 탐험 언어: ${lang}</div></div>`}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+init();
+</script></body></html>
