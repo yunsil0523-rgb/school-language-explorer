@@ -16,6 +16,8 @@ input,textarea,select{width:100%;padding:11px;border:2px solid #e5e1ef;border-ra
 button.primary{background:#7567e8;color:#fff;border:0;border-radius:11px;padding:11px 15px;font-weight:700}button.secondary{background:#e7f8f4;color:#24776b;border:0;border-radius:11px;padding:11px 15px}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.hidden{display:none}
 .translate{padding:13px;background:#f7fffd;border-left:5px solid #54c8b2;border-radius:12px;margin:8px 0}.tr{font-size:18px;margin-top:4px}
+.quickTranslator{margin:14px 0;padding:16px;background:#f8f7ff;border:2px solid #e5e1ff;border-radius:16px}
+.quickTranslator textarea{min-height:92px;resize:vertical;background:#fff}.quickResult{min-height:58px;margin-top:10px;padding:14px;background:#fff;border:2px solid #d8f2ec;border-radius:12px;font-size:19px;line-height:1.5;white-space:pre-wrap}.quickResult.empty{color:#77738a;font-size:14px}.translatorBar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.translatorBar .actions{margin-top:0}
 .poster{width:min(760px,100%);aspect-ratio:4/3;margin:auto;padding:34px;border-radius:18px;background:linear-gradient(135deg,#fff9e7,#eefcff);border:8px solid #7567e8;text-align:center}
 .poster h1{font-size:34px}.poster .big{font-size:23px;font-weight:800}.poster .small{margin-top:12px;color:#555}
 .posterWords{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}.posterBox{background:#ffffffcc;border-radius:12px;padding:12px;text-align:left}
@@ -38,7 +40,12 @@ button.primary{background:#7567e8;color:#fff;border:0;border-radius:11px;padding
 <div class="card"><h2>🔎 어휘 탐험가</h2><div id="words" class="chips"></div><input id="newWord" placeholder="직접 찾은 어휘"><button class="secondary" onclick="addWord()">+ 추가</button></div>
 <div class="card"><h2>🗣️ 표현 탐험가</h2><div id="phrases" class="chips"></div><input id="newPhrase" placeholder="직접 찾은 표현"><button class="secondary" onclick="addPhrase()">+ 추가</button></div>
 <div class="card"><h2>🌏 언어 탐험가</h2><p class="muted">우리 조가 조사한 어휘와 표현을 선택한 언어로 실제 번역합니다.</p>
-<div id="langs" class="chips"></div><div id="results"></div><div class="note">💡 자동 번역은 참고용입니다. 실제 화자나 가족 친구에게 자연스러운 표현인지 확인해 보세요.</div></div>
+<div id="langs" class="chips"></div>
+<div class="quickTranslator"><label for="quickInput"><b>⌨️ 한국어를 직접 입력해 보세요</b></label><p class="muted"><span id="quickTarget">English</span>(으)로 바로 번역됩니다.</p>
+<textarea id="quickInput" lang="ko" placeholder="예: 오늘 점심 메뉴가 뭐예요?"></textarea>
+<div class="translatorBar"><span id="quickStatus" class="muted" aria-live="polite">한국어를 입력해 주세요.</span><div class="actions"><button type="button" class="primary" onclick="translateTypedText()">바로 번역</button><button type="button" class="secondary" onclick="clearQuickTranslation()">지우기</button></div></div>
+<div id="quickResult" class="quickResult empty" aria-live="polite">번역 결과가 여기에 표시됩니다.</div></div>
+<div id="results"></div><div class="note">💡 자동 번역은 참고용입니다. 실제 화자나 가족 친구에게 자연스러운 표현인지 확인해 보세요.</div></div>
 <div class="card"><h2>🎤 발표자</h2><select id="rep"></select><button class="primary" onclick="saveRep()">대표 표현 저장</button></div>
 </section>
 
@@ -79,16 +86,26 @@ function addPhrase(){let v=document.getElementById("newPhrase").value.trim();if(
 function renderWork(){let p=places[state.place];document.getElementById("title").textContent=p[1]+" "+p[0]+" 탐험";document.getElementById("teamLine").textContent="👥 "+(state.team||"우리 조")+" · 조별 탐구";
 document.getElementById("words").innerHTML=p[2].map(x=>`<button class="chip ${(state.words[state.place]||[]).includes(x)?"on":""}" onclick='toggle("words",${JSON.stringify(x)})'>${x}</button>`).join("");
 document.getElementById("phrases").innerHTML=p[3].map(x=>`<button class="chip ${(state.phrases[state.place]||[]).includes(x)?"on":""}" onclick='toggle("phrases",${JSON.stringify(x)})'>${x}</button>`).join("");
-document.getElementById("langs").innerHTML=Object.entries(languages).map(([k,v])=>`<button class="lang ${state.lang===k?"on":""}" onclick="translateAll('${k}')">${v}</button>`).join("");
+document.getElementById("langs").innerHTML=Object.entries(languages).map(([k,v])=>`<button class="lang ${state.lang===k?"on":""}" onclick="translateAll('${k}',this)">${v}</button>`).join("");
+document.getElementById("quickTarget").textContent=languages[state.lang]||"English";
 let ph=state.phrases[state.place]||[];document.getElementById("rep").innerHTML=ph.length?ph.map(x=>`<option>${x}</option>`).join(""):"<option>표현을 먼저 선택하세요</option>";
 if(state.rep)document.getElementById("rep").value=state.rep;
 renderResults();renderPoster();
 }
-async function translateAll(lang){state.lang=lang;save();document.querySelectorAll(".lang").forEach(b=>b.classList.remove("on"));event.target.classList.add("on");let all=[...(state.words[state.place]||[]),...(state.phrases[state.place]||[])];if(!all.length){document.getElementById("results").innerHTML="<div class='note'>먼저 조사할 어휘·표현을 선택하세요.</div>";return}document.getElementById("results").innerHTML="<div class='note'>⏳ 번역 중...</div>";try{let r=await fetch("/api/translate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({texts:all,target:lang})});let d=await r.json();if(!r.ok)throw new Error(d.error||"번역 오류");document.getElementById("results").innerHTML=d.translations.map((t,i)=>`<div class="translate"><b>한국어 · ${all[i]}</b><div class="tr">→ ${languages[lang]} · ${t}</div></div>`).join("")}catch(e){document.getElementById("results").innerHTML=`<div class="note">⚠️ ${e.message}<br>서버가 실행 중인지 확인해 주세요.</div>`}}
+async function requestTranslations(texts,target){let r=await fetch("/api/translate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({texts,target})});let d=await r.json();if(!r.ok)throw new Error(d.error||"번역 오류");return d.translations}
+async function translateAll(lang,button){state.lang=lang;save();document.querySelectorAll(".lang").forEach(b=>b.classList.toggle("on",b===button));document.getElementById("quickTarget").textContent=languages[lang];let all=[...(state.words[state.place]||[]),...(state.phrases[state.place]||[])];if(!all.length){document.getElementById("results").innerHTML="<div class='note'>조사한 어휘·표현을 선택하면 이 아래에도 함께 번역됩니다.</div>"}else{document.getElementById("results").innerHTML="<div class='note'>⏳ 선택한 어휘·표현 번역 중...</div>";try{let translations=await requestTranslations(all,lang);document.getElementById("results").innerHTML=translations.map((t,i)=>`<div class="translate"><b>한국어 · ${esc(all[i])}</b><div class="tr">→ ${esc(languages[lang])} · ${esc(t)}</div></div>`).join("")}catch(e){document.getElementById("results").innerHTML=`<div class="note">⚠️ ${esc(e.message)}<br>서버가 실행 중인지 확인해 주세요.</div>`}}if(document.getElementById("quickInput").value.trim())translateTypedText()}
+let quickTimer=null,quickRequest=0,isComposing=false;
+function queueQuickTranslation(){clearTimeout(quickTimer);let value=document.getElementById("quickInput").value.trim();if(!value){clearQuickResult();return}document.getElementById("quickStatus").textContent="입력이 끝나면 자동으로 번역해요.";if(!isComposing)quickTimer=setTimeout(translateTypedText,650)}
+async function translateTypedText(){clearTimeout(quickTimer);let text=document.getElementById("quickInput").value.trim();if(!text){clearQuickResult();return}let requestId=++quickRequest,target=state.lang;let status=document.getElementById("quickStatus"),result=document.getElementById("quickResult");status.textContent="⏳ 번역 중...";result.classList.add("empty");result.textContent="번역하고 있어요.";try{let translations=await requestTranslations([text],target);if(requestId!==quickRequest)return;result.classList.remove("empty");result.textContent=translations[0];status.textContent=`한국어 → ${languages[target]} 번역 완료`}catch(e){if(requestId!==quickRequest)return;result.classList.add("empty");result.textContent=`⚠️ ${e.message}`;status.textContent="번역하지 못했어요."}}
+function clearQuickResult(){quickRequest++;document.getElementById("quickStatus").textContent="한국어를 입력해 주세요.";let result=document.getElementById("quickResult");result.classList.add("empty");result.textContent="번역 결과가 여기에 표시됩니다."}
+function clearQuickTranslation(){clearTimeout(quickTimer);document.getElementById("quickInput").value="";clearQuickResult();document.getElementById("quickInput").focus()}
 function renderResults(){document.getElementById("results").innerHTML="<div class='note'>언어를 선택하면 실제 번역 결과가 여기에 표시됩니다.</div>"}
 function saveRep(){state.rep=document.getElementById("rep").value;save();alert("대표 표현을 저장했어요!")}
 function showPoster(){document.querySelectorAll("section").forEach(x=>x.classList.add("hidden"));document.getElementById("posterSection").classList.remove("hidden");renderPoster()}
 function renderPoster(){let allW=Object.values(state.words).flat();let allP=Object.values(state.phrases).flat();let lang=languages[state.lang]||"English";let chosen=[...allW,...allP].slice(0,10);document.getElementById("poster").innerHTML=`<div class="poster"><h1>${esc(document.getElementById("ptitle")?.value||"우리 학교 생활 한국어")}</h1><div class="big">${esc(state.team||"우리 조")}</div><div class="small">${esc(document.getElementById("pintro")?.value||"우리 조가 찾은 학교생활 표현을 다른 언어로 알아보았어요!")}</div><div class="posterWords"><div class="posterBox"><b>🔎 우리 조가 찾은 어휘</b><p>${allW.slice(0,5).map(esc).join(" · ")||"조사한 어휘를 추가해 주세요."}</p></div><div class="posterBox"><b>🗣️ 우리 조가 찾은 표현</b><p>${allP.slice(0,5).map(esc).join("<br>")||"조사한 표현을 추가해 주세요."}</p></div></div><div class="small">🌏 언어 탐험 언어: ${lang}</div></div>`}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+document.getElementById("quickInput").addEventListener("input",queueQuickTranslation);
+document.getElementById("quickInput").addEventListener("compositionstart",()=>{isComposing=true;clearTimeout(quickTimer)});
+document.getElementById("quickInput").addEventListener("compositionend",()=>{isComposing=false;queueQuickTranslation()});
 init();
 </script></body></html>
